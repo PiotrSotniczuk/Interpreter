@@ -1,0 +1,15 @@
+int main () := {
+    int fun1 (a : int, b :& int) := {
+        bool fun2 (c : bool) := {return c;};
+        a++;
+        b++;
+        return a+b;
+    };
+    
+    int var1 := 5;
+    int var2 := 10;
+
+    fun1(var1, var2);
+
+    return 0;
+}

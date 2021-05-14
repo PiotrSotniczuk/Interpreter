@@ -1,0 +1,131 @@
+-- programs ------------------------------------------------
+
+entrypoints Program ;
+
+ProgramDef. Program ::= FDec ;
+
+-- declarations --------------------------------------------
+
+FDec.		FDec ::= Type Ident "(" [Arg] ")" ":=" Block ;
+
+Dec.		Dec ::= FDec;
+
+VDec.		Dec ::= Type Ident ;
+
+VdecInit.	Dec ::= Type Ident ":=" Expr ; 
+
+ValArg.		Arg ::= Ident ":" Type ;
+
+RefArg.		Arg ::= Ident ":&" Type ;
+
+separator 	Arg "," ;
+
+-- statements ----------------------------------------------
+
+Block.     	Block ::= "{" [Stmt] "}" ;
+
+separator  	Stmt "" ;
+
+DecStmt.	Stmt ::= Dec ";" ;
+
+Assign.    	Stmt ::= Ident ":=" Expr ";" ;
+
+Incr. 		Stmt ::= Ident "++"  ";" ;
+
+Decr. 		Stmt ::= Ident "--"  ";" ;
+
+Ret.  		Stmt ::= "return" Expr ";" ;
+
+If.     	Stmt ::= "if" "(" Expr ")" Block ;
+
+IfElse.  	Stmt ::= "if" "(" Expr ")" Block "else" Block ;
+
+While.     	Stmt ::= "while" "(" Expr ")" Block ;
+
+Break.		Stmt ::= "break" ";" ;
+
+Cont.		Stmt ::= "continue" ";" ;
+
+SExp.      	Stmt ::= Expr  ";" ;
+
+-- Types ---------------------------------------------------
+
+Int.	    Type ::= "int" ;
+
+Str.       	Type ::= "str" ;
+
+Bool.      	Type ::= "bool" ;
+
+TypTuple.   Type ::= "[" [Type] "]" ;
+
+separator 	nonempty Type "," ;
+
+-- Expressions ---------------------------------------------
+
+EVar.  	    Expr6 ::= Ident ;
+
+ELitInt. 	Expr6 ::= Integer ;
+
+ELitStr.  	Expr6 ::= String ;
+
+ETup.		Expr6 ::= Tuple ;
+
+ETupTak.	Expr6 ::= Expr6 "^" Integer ;
+
+Tuple.		Tuple ::= "[" [Expr] "]" ;
+
+ELitTrue. 	Expr6 ::= "true" ;
+
+ElitFalse.	Expr6 ::= "false" ;
+
+ElitMaybe.	Expr6 ::= "maybe" ;
+
+ERunFun.   	Expr6 ::= Ident "(" [Expr] ")" ;
+
+EMinus.     Expr5 ::= "-" Expr6 ;
+
+ENot.      	Expr5 ::= "!" Expr6 ;
+
+EMul.     	Expr4 ::= Expr4 MulOp Expr5 ;
+
+EAdd.     	Expr3 ::= Expr3 AddOp Expr4 ;
+
+EComp.     	Expr2 ::= Expr2 CompOp Expr3 ;
+
+EAnd.     	Expr1 ::= Expr2 "&&" Expr1 ;
+
+EOr.      	Expr ::= Expr1 "||" Expr ;
+
+coercions  	Expr 6 ;
+
+separator  	Expr "," ;
+
+-- operators -----------------------------------------------
+
+Plus.      	AddOp ::= "+" ;
+
+Minus.     	AddOp ::= "-" ;
+
+Times.     	MulOp ::= "*" ;
+
+Div.       	MulOp ::= "/" ;
+
+Mod.       	MulOp ::= "%" ;
+
+LTH.       	CompOp ::= "<" ;
+
+LE.        	CompOp ::= "<=" ;
+
+GTH.       	CompOp ::= ">" ;
+
+GE.        	CompOp ::= ">=" ;
+
+EQU.       	CompOp ::= "==" ;
+
+NE.        	CompOp ::= "!=" ;
+
+-- comments ------------------------------------------------
+
+comment    "//" ;
+
+comment    "/*" "*/" ;

@@ -1,0 +1,14 @@
+int main () := {
+
+    [int, bool, [str, int]] tuple := [5, true, ["something", 0]]; 
+
+    int pair := tuple^3;
+
+    int last := pair^2;
+
+    last := tuple^3^2;
+
+    str new := [5, "str"]^2;
+    
+    return 0;
+}

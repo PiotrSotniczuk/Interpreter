@@ -1,0 +1,5 @@
+int main () := {
+    str hello := "Hello World";
+    print(hello);
+    return 0;
+}

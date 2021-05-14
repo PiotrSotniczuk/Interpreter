@@ -1,0 +1,16 @@
+int main () := {
+    bool m := maybe;
+
+    // it will either run forever or not at all
+    while (m) {
+        print("I am infinite");
+    }
+
+    // it will stop sooner or later
+    while(m) {
+        m := maybe;
+        print("I will stop soon");
+    }
+
+    return 0;
+}

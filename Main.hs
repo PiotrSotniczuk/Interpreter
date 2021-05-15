@@ -21,38 +21,39 @@ import LexFlatte   ( Token )
 import ParFlatte   ( pProgram, myLexer )
 import PrintFlatte ( Print, printTree )
 import SkelFlatte  ()
+import Helpers     (initEnv, initStore, runInterpreter, runInterM)
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a
 type Verbosity  = Int
 
-putStrV :: Verbosity -> String -> IO ()
-putStrV v s = when (v > 1) $ putStrLn s
+runFile :: FilePath -> IO ()
+runFile f = putStrLn f >> readFile f >>= run
 
-runFile :: (Print a, Show a) => Verbosity -> ParseFun a -> FilePath -> IO ()
-runFile v p f = putStrLn f >> readFile f >>= run v p
-
-run :: (Print a, Show a) => Verbosity -> ParseFun a -> String -> IO ()
-run v p s =
-  case p ts of
+run :: String -> IO ()
+run s =
+  case pProgram ts of
     Left err -> do
       putStrLn "\nParse              Failed...\n"
-      putStrV v "Tokens:"
-      putStrV v $ show ts
+      putStrLn "Tokens:"
+      putStrLn $ show ts
       putStrLn err
       exitFailure
     Right tree -> do
       putStrLn "\nParse Successful!"
-      showTree v tree
-      exitSuccess       
-      
+      showTree tree
+      (val, store) <- runInterM initEnv initStore (runInterpreter tree)       
+      --case val of
+      --      Left e  -> hPutStrLn stderr e
+      --      Right code -> hPutStrLn stderr $ "Exit code: " ++ show code
+      exitSuccess
   where
   ts = myLexer s
 
-showTree :: (Show a, Print a) => Int -> a -> IO ()
-showTree v tree = do
-  putStrV v $ "\n[Abstract Syntax]\n\n" ++ show tree
-  putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
+showTree :: (Show a, Print a) => a -> IO ()
+showTree tree = do
+  putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
+  putStrLn $ "\n[Linearized tree]\n\n" ++ printTree tree
 
 usage :: IO ()
 usage = do
@@ -70,6 +71,6 @@ main = do
   args <- getArgs
   case args of
     ["--help"] -> usage
-    []         -> getContents >>= run 2 pProgram
-    "-s":fs    -> mapM_ (runFile 0 pProgram) fs
-    fs         -> mapM_ (runFile 2 pProgram) fs
+    []         -> getContents >>= run
+    "-s":fs    -> mapM_ (runFile) fs
+    fs         -> mapM_ (runFile) fs

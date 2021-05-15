@@ -12,11 +12,11 @@ ALEX_OPTS  = --ghc
 
 # Default goal.
 
-all : TestFlatte
+all : Main
 
 # Rules for building the parser.
 
-AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs TestFlatte.hs : flatte.cf
+AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs Helpers.hs Main.hs : flatte.cf
 	bnfc --haskell --functor flatte.cf
 
 %.hs : %.y
@@ -25,7 +25,7 @@ AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs TestFlatte.hs : flatte.cf
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-TestFlatte : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs TestFlatte.hs
+Main : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs Helpers.hs Main.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.
@@ -34,7 +34,7 @@ clean :
 	-rm -f *.hi *.o *.log *.aux *.dvi
 
 distclean : clean
-	-rm -f AbsFlatte.hs AbsFlatte.hs.bak ComposOp.hs ComposOp.hs.bak DocFlatte.txt DocFlatte.txt.bak ErrM.hs ErrM.hs.bak LayoutFlatte.hs LayoutFlatte.hs.bak LexFlatte.x LexFlatte.x.bak ParFlatte.y ParFlatte.y.bak PrintFlatte.hs PrintFlatte.hs.bak SkelFlatte.hs SkelFlatte.hs.bak TestFlatte.hs TestFlatte.hs.bak XMLFlatte.hs XMLFlatte.hs.bak ASTFlatte.agda ASTFlatte.agda.bak ParserFlatte.agda ParserFlatte.agda.bak IOLib.agda IOLib.agda.bak Main.agda Main.agda.bak flatte.dtd flatte.dtd.bak TestFlatte LexFlatte.hs ParFlatte.hs ParFlatte.info ParDataFlatte.hs Makefile
+	-rm -f AbsFlatte.hs AbsFlatte.hs.bak ComposOp.hs ComposOp.hs.bak DocFlatte.txt DocFlatte.txt.bak ErrM.hs ErrM.hs.bak LayoutFlatte.hs LayoutFlatte.hs.bak LexFlatte.x LexFlatte.x.bak ParFlatte.y ParFlatte.y.bak PrintFlatte.hs PrintFlatte.hs.bak SkelFlatte.hs SkelFlatte.hs.bak Main.hs Main.hs.bak XMLFlatte.hs XMLFlatte.hs.bak ASTFlatte.agda ASTFlatte.agda.bak ParserFlatte.agda ParserFlatte.agda.bak IOLib.agda IOLib.agda.bak Main.agda Main.agda.bak flatte.dtd flatte.dtd.bak Main LexFlatte.hs ParFlatte.hs ParFlatte.info ParDataFlatte.hs Makefile
 
 
 # EOF

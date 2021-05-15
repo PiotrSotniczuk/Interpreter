@@ -112,15 +112,11 @@ instance Print AbsFlatte.Ident where
 
 instance Print (AbsFlatte.Program' a) where
   prt i = \case
-    AbsFlatte.ProgramDef _ fdec -> prPrec i 0 (concatD [prt 0 fdec])
-
-instance Print (AbsFlatte.FDec' a) where
-  prt i = \case
-    AbsFlatte.FDec _ type_ id_ args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ":="), prt 0 block])
+    AbsFlatte.ProgramDef _ dec -> prPrec i 0 (concatD [prt 0 dec])
 
 instance Print (AbsFlatte.Dec' a) where
   prt i = \case
-    AbsFlatte.Dec _ fdec -> prPrec i 0 (concatD [prt 0 fdec])
+    AbsFlatte.FDec _ type_ id_ args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ":="), prt 0 block])
     AbsFlatte.VDec _ type_ id_ -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_])
     AbsFlatte.VdecInit _ type_ id_ expr -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString ":="), prt 0 expr])
 

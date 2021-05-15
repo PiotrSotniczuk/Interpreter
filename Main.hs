@@ -15,6 +15,7 @@ import Prelude
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
+import System.IO ( stdin, stderr, hGetContents, hPutStrLn )
 
 import AbsFlatte   ()
 import LexFlatte   ( Token )
@@ -43,9 +44,9 @@ run s =
       putStrLn "\nParse Successful!"
       showTree tree
       (val, store) <- runInterM initEnv initStore (runInterpreter tree)       
-      --case val of
-      --      Left e  -> hPutStrLn stderr e
-      --      Right code -> hPutStrLn stderr $ "Exit code: " ++ show code
+      case val of
+            Left e  -> hPutStrLn stderr e
+            Right code -> hPutStrLn stderr $ "Exit code: " ++ show code
       exitSuccess
   where
   ts = myLexer s

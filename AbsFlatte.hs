@@ -20,16 +20,12 @@ import qualified Prelude as C
 import qualified Data.String
 
 type Program = Program' BNFC'Position
-data Program' a = ProgramDef a (FDec' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
-
-type FDec = FDec' BNFC'Position
-data FDec' a = FDec a (Type' a) Ident [Arg' a] (Block' a)
+data Program' a = ProgramDef a (Dec' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Dec = Dec' BNFC'Position
 data Dec' a
-    = Dec a (FDec' a)
+    = FDec a (Type' a) Ident [Arg' a] (Block' a)
     | VDec a (Type' a) Ident
     | VdecInit a (Type' a) Ident (Expr' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
@@ -119,13 +115,9 @@ instance HasPosition Program where
   hasPosition = \case
     ProgramDef p _ -> p
 
-instance HasPosition FDec where
-  hasPosition = \case
-    FDec p _ _ _ _ -> p
-
 instance HasPosition Dec where
   hasPosition = \case
-    Dec p _ -> p
+    FDec p _ _ _ _ -> p
     VDec p _ _ -> p
     VdecInit p _ _ _ -> p
 

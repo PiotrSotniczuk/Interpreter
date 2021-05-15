@@ -19,15 +19,11 @@ transIdent x = case x of
 
 transProgram :: Show a => AbsFlatte.Program' a -> Result
 transProgram x = case x of
-  AbsFlatte.ProgramDef _ fdec -> failure x
-
-transFDec :: Show a => AbsFlatte.FDec' a -> Result
-transFDec x = case x of
-  AbsFlatte.FDec _ type_ ident args block -> failure x
+  AbsFlatte.ProgramDef _ dec -> failure x
 
 transDec :: Show a => AbsFlatte.Dec' a -> Result
 transDec x = case x of
-  AbsFlatte.Dec _ fdec -> failure x
+  AbsFlatte.FDec _ type_ ident args block -> failure x
   AbsFlatte.VDec _ type_ ident -> failure x
   AbsFlatte.VdecInit _ type_ ident expr -> failure x
 

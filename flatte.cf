@@ -2,13 +2,11 @@
 
 entrypoints Program ;
 
-ProgramDef. Program ::= FDec ;
+ProgramDef. Program ::= Dec ;
 
 -- declarations --------------------------------------------
 
-FDec.		FDec ::= Type Ident "(" [Arg] ")" ":=" Block ;
-
-Dec.		Dec ::= FDec;
+FDec.		Dec ::= Type Ident "(" [Arg] ")" ":=" Block ;
 
 VDec.		Dec ::= Type Ident ;
 

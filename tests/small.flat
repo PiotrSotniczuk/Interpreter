@@ -1,8 +1,15 @@
 int main() := {
-    int fun1 (a : int, b : int) := {
-        return true;
+    int a := 10;
+    int fun() := {
+        return a+2;
     };
-    int x := 1;
-
-    return fun1(1,4);
+    print(a);
+    int fun2() := {
+        int a := 5;
+        print(fun(), a);
+        a++;
+        return 0;
+    };
+    fun2();
+    return fun2();
 }

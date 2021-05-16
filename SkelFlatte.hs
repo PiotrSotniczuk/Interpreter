@@ -17,85 +17,85 @@ transIdent :: AbsFlatte.Ident -> Result
 transIdent x = case x of
   AbsFlatte.Ident string -> failure x
 
-transProgram :: Show a => AbsFlatte.Program' a -> Result
+transProgram :: AbsFlatte.Program -> Result
 transProgram x = case x of
-  AbsFlatte.ProgramDef _ dec -> failure x
+  AbsFlatte.ProgramDef dec -> failure x
 
-transDec :: Show a => AbsFlatte.Dec' a -> Result
+transDec :: AbsFlatte.Dec -> Result
 transDec x = case x of
-  AbsFlatte.FDec _ type_ ident args block -> failure x
-  AbsFlatte.VDec _ type_ ident -> failure x
-  AbsFlatte.VdecInit _ type_ ident expr -> failure x
+  AbsFlatte.FDec type_ ident args block -> failure x
+  AbsFlatte.VDec type_ ident -> failure x
+  AbsFlatte.VdecInit type_ ident expr -> failure x
 
-transArg :: Show a => AbsFlatte.Arg' a -> Result
+transArg :: AbsFlatte.Arg -> Result
 transArg x = case x of
-  AbsFlatte.ValArg _ ident type_ -> failure x
-  AbsFlatte.RefArg _ ident type_ -> failure x
+  AbsFlatte.ValArg ident type_ -> failure x
+  AbsFlatte.RefArg ident type_ -> failure x
 
-transBlock :: Show a => AbsFlatte.Block' a -> Result
+transBlock :: AbsFlatte.Block -> Result
 transBlock x = case x of
-  AbsFlatte.Block _ stmts -> failure x
+  AbsFlatte.BlockStmt stmts -> failure x
 
-transStmt :: Show a => AbsFlatte.Stmt' a -> Result
+transStmt :: AbsFlatte.Stmt -> Result
 transStmt x = case x of
-  AbsFlatte.DecStmt _ dec -> failure x
-  AbsFlatte.Assign _ ident expr -> failure x
-  AbsFlatte.Incr _ ident -> failure x
-  AbsFlatte.Decr _ ident -> failure x
-  AbsFlatte.Ret _ expr -> failure x
-  AbsFlatte.If _ expr block -> failure x
-  AbsFlatte.IfElse _ expr block1 block2 -> failure x
-  AbsFlatte.While _ expr block -> failure x
-  AbsFlatte.Break _ -> failure x
-  AbsFlatte.Cont _ -> failure x
-  AbsFlatte.SExp _ expr -> failure x
+  AbsFlatte.DecStmt dec -> failure x
+  AbsFlatte.Assign ident expr -> failure x
+  AbsFlatte.Incr ident -> failure x
+  AbsFlatte.Decr ident -> failure x
+  AbsFlatte.Ret expr -> failure x
+  AbsFlatte.If expr block -> failure x
+  AbsFlatte.IfElse expr block1 block2 -> failure x
+  AbsFlatte.While expr block -> failure x
+  AbsFlatte.Break -> failure x
+  AbsFlatte.Cont -> failure x
+  AbsFlatte.SExp expr -> failure x
 
-transType :: Show a => AbsFlatte.Type' a -> Result
+transType :: AbsFlatte.Type -> Result
 transType x = case x of
-  AbsFlatte.Int _ -> failure x
-  AbsFlatte.Str _ -> failure x
-  AbsFlatte.Bool _ -> failure x
-  AbsFlatte.TypTuple _ types -> failure x
+  AbsFlatte.Int -> failure x
+  AbsFlatte.Str -> failure x
+  AbsFlatte.Bool -> failure x
+  AbsFlatte.TypTuple types -> failure x
 
-transExpr :: Show a => AbsFlatte.Expr' a -> Result
+transExpr :: AbsFlatte.Expr -> Result
 transExpr x = case x of
-  AbsFlatte.EVar _ ident -> failure x
-  AbsFlatte.ELitInt _ integer -> failure x
-  AbsFlatte.ELitStr _ string -> failure x
-  AbsFlatte.ETup _ tuple -> failure x
-  AbsFlatte.ETupTak _ expr integer -> failure x
-  AbsFlatte.ELitTrue _ -> failure x
-  AbsFlatte.ElitFalse _ -> failure x
-  AbsFlatte.ElitMaybe _ -> failure x
-  AbsFlatte.ERunFun _ ident exprs -> failure x
-  AbsFlatte.EMinus _ expr -> failure x
-  AbsFlatte.ENot _ expr -> failure x
-  AbsFlatte.EMul _ expr1 mulop expr2 -> failure x
-  AbsFlatte.EAdd _ expr1 addop expr2 -> failure x
-  AbsFlatte.EComp _ expr1 compop expr2 -> failure x
-  AbsFlatte.EAnd _ expr1 expr2 -> failure x
-  AbsFlatte.EOr _ expr1 expr2 -> failure x
+  AbsFlatte.EVar ident -> failure x
+  AbsFlatte.ELitInt integer -> failure x
+  AbsFlatte.ELitStr string -> failure x
+  AbsFlatte.ETup tuple -> failure x
+  AbsFlatte.ETupTak expr integer -> failure x
+  AbsFlatte.ELitTrue -> failure x
+  AbsFlatte.ELitFalse -> failure x
+  AbsFlatte.ELitMaybe -> failure x
+  AbsFlatte.ERunFun ident exprs -> failure x
+  AbsFlatte.EMinus expr -> failure x
+  AbsFlatte.ENot expr -> failure x
+  AbsFlatte.EMul expr1 mulop expr2 -> failure x
+  AbsFlatte.EAdd expr1 addop expr2 -> failure x
+  AbsFlatte.EComp expr1 compop expr2 -> failure x
+  AbsFlatte.EAnd expr1 expr2 -> failure x
+  AbsFlatte.EOr expr1 expr2 -> failure x
 
-transTuple :: Show a => AbsFlatte.Tuple' a -> Result
+transTuple :: AbsFlatte.Tuple -> Result
 transTuple x = case x of
-  AbsFlatte.Tuple _ exprs -> failure x
+  AbsFlatte.ETuple exprs -> failure x
 
-transAddOp :: Show a => AbsFlatte.AddOp' a -> Result
+transAddOp :: AbsFlatte.AddOp -> Result
 transAddOp x = case x of
-  AbsFlatte.Plus _ -> failure x
-  AbsFlatte.Minus _ -> failure x
+  AbsFlatte.Plus -> failure x
+  AbsFlatte.Minus -> failure x
 
-transMulOp :: Show a => AbsFlatte.MulOp' a -> Result
+transMulOp :: AbsFlatte.MulOp -> Result
 transMulOp x = case x of
-  AbsFlatte.Times _ -> failure x
-  AbsFlatte.Div _ -> failure x
-  AbsFlatte.Mod _ -> failure x
+  AbsFlatte.Times -> failure x
+  AbsFlatte.Div -> failure x
+  AbsFlatte.Mod -> failure x
 
-transCompOp :: Show a => AbsFlatte.CompOp' a -> Result
+transCompOp :: AbsFlatte.CompOp -> Result
 transCompOp x = case x of
-  AbsFlatte.LTH _ -> failure x
-  AbsFlatte.LE _ -> failure x
-  AbsFlatte.GTH _ -> failure x
-  AbsFlatte.GE _ -> failure x
-  AbsFlatte.EQU _ -> failure x
-  AbsFlatte.NE _ -> failure x
+  AbsFlatte.LTH -> failure x
+  AbsFlatte.LE -> failure x
+  AbsFlatte.GTH -> failure x
+  AbsFlatte.GE -> failure x
+  AbsFlatte.EQU -> failure x
+  AbsFlatte.NE -> failure x

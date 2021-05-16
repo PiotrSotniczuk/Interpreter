@@ -14,26 +14,7 @@ import SkelFlatte
 import ErrM
 import PrintFlatte
 
-type Loc = Int
-type Env = M.Map Ident Loc
-type Store = M.Map Loc Value
-
-data Value = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
-    deriving (Eq, Ord)
-
-data RetInfo = Return Value | RetEnv Env | Break | Continue
-
-initEnv :: Env
-initEnv = M.empty
-
-initStore :: Store
-initStore = M.empty
-
-
-type InterpreterM a = ReaderT Env (ExceptT String (StateT Store IO)) a
-
-runInterM :: Env -> Store -> InterpreterM a -> IO (Either String a, Store)
-runInterM env state ev = runStateT (runExceptT (runReaderT ev env)) state
+import DataTypes
 
 getNewLoc :: Store -> Int
 getNewLoc s = M.size s + 1
@@ -77,9 +58,17 @@ setValToVar id val = do
 
 
 declare :: Dec -> InterpreterM Env
-declare (FDec pos t id args block) = do
+declare (FDec t id args block) = do
     env <- saveVarInEnv t id
     local (const env) (setValToVar id (VFunc env args block))
+    return env
+declare (VDec t id) = do
+    env <- saveVarInEnv t id
+    return env
+declare (VdecInit t id expr) = do
+    val <- evalExpr expr
+    env <- saveVarInEnv t id
+    local (const env) (setValToVar id val)
     return env
 
 evalFuncExprs :: [Expr] -> InterpreterM [Value]
@@ -90,41 +79,51 @@ assignFuncArgs :: [Arg] -> [Value] -> InterpreterM Env
 --TODO check length
 --TODO REF
 assignFuncArgs [] [] = ask
-assignFuncArgs ((ValArg pos id t):args) (v:vs) = do
+assignFuncArgs ((ValArg id t):args) (v:vs) = do
     env <- saveVarInEnv t id
     local (const env) $ setValToVar id v
     local (const env) $ assignFuncArgs args vs
 
 
 executeStmt :: Stmt -> InterpreterM RetInfo
-executeStmt (Ret pos expr) = do
+executeStmt (Ret expr) = do
     val <- evalExpr expr
     return (Return val)
+executeStmt (DecStmt dec) = do
+    env <- declare dec
+    return (RetEnv env)
+
 
 executeBlock :: Block -> InterpreterM RetInfo
-executeBlock (Block pos []) = do
+executeBlock (BlockStmt []) = do
     env <- ask
     return (RetEnv env)
-executeBlock (Block pos (stmt:stmts)) = do
+executeBlock (BlockStmt (stmt:stmts)) = do
     ret <- executeStmt stmt
     case ret of
         Return val      -> return (Return val)
-        RetEnv env   -> local (const env) $ executeBlock (Block pos stmts)
+        RetEnv env   -> local (const env) $ executeBlock (BlockStmt stmts)
 
+
+--evalMaybe :: IO Bool
+--evalMaybe = do
+--    randomNum <- randomRIO (0,1)
+--    return (randomNum == 0)
 
 evalExpr :: Expr -> InterpreterM Value
-evalExpr (ELitInt pos val)            = return (VInt val)
-evalExpr (ELitStr pos str)            = return (VString str)
---evalExpr ETrue                 = return (VBool True)
---evalExpr EFalse                = return (VBool False)
-evalExpr (EVar pos id)             = getVarVal id
+evalExpr (ELitInt val)            = return (VInt val)
+evalExpr (ELitStr str)            = return (VString str)
+evalExpr (ELitTrue )                = return (VBool True)
+evalExpr (ELitFalse)                = return (VBool False)
+--evalExpr (ELitMaybe)                = return (VBool True)
+evalExpr (EVar id)             = getVarVal id
 --evalExpr (EUnar not expr)      = notVBool    <$> evalExpr expr
 --evalExpr (ELog expr1 op expr2) = logVBool op <$> evalExpr expr1 <*> evalExpr expr2
 --evalExpr (ECmp expr1 op expr2) = cmpVInt  op <$> evalExpr expr1 <*> evalExpr expr2
 --evalExpr (EMul expr1 op expr2) = mulVInt  op <$> evalExpr expr1 <*> evalExpr expr2
---evalExpr (EAdd pos expr1 op expr2) = addVInt  op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (ERunFun pos id in_args)       = do
-    VFunc env env_args block <- evalExpr (EVar pos id)
+--evalExpr (EAdd expr1 op expr2) = addVInt  op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (ERunFun id in_args)       = do
+    VFunc env env_args block <- evalExpr (EVar id)
     in_vals                   <- evalFuncExprs in_args
     env'                 <- local (const env)  $ assignFuncArgs env_args in_vals
     ret                  <- local (const env') $ executeBlock block
@@ -134,8 +133,8 @@ evalExpr (ERunFun pos id in_args)       = do
 
 
 runInterpreter :: Program -> InterpreterM Integer
-runInterpreter (ProgramDef pos mainDec) = do
+runInterpreter (ProgramDef mainDec) = do
     liftIO (putStrLn (show mainDec))
     env      <- declare mainDec
-    VInt val <- local (const env) (evalExpr (ERunFun pos (Ident "main") []))
+    VInt val <- local (const env) (evalExpr (ERunFun (Ident "main") []))
     return val

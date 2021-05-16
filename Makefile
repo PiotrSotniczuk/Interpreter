@@ -16,8 +16,8 @@ all : Main
 
 # Rules for building the parser.
 
-AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs Helpers.hs Main.hs : flatte.cf
-	bnfc --haskell --functor flatte.cf
+AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs Main.hs : flatte.cf
+	bnfc --haskell flatte.cf
 
 %.hs : %.y
 	${HAPPY} ${HAPPY_OPTS} $<
@@ -25,7 +25,7 @@ AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs Helpers.hs Main.hs : flatte.
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-Main : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs Helpers.hs Main.hs
+Main : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs Helpers.hs DataTypes.hs Main.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.

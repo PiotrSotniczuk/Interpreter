@@ -14,7 +14,7 @@ import LexFlatte
 
 }
 
-%name pProgram_internal Program
+%name pProgram Program
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
@@ -59,132 +59,124 @@ import LexFlatte
   '{' { PT _ (TS _ 38) }
   '||' { PT _ (TS _ 39) }
   '}' { PT _ (TS _ 40) }
-  L_Ident  { PT _ (TV _) }
-  L_integ  { PT _ (TI _) }
-  L_quoted { PT _ (TL _) }
+  L_Ident  { PT _ (TV $$) }
+  L_integ  { PT _ (TI $$) }
+  L_quoted { PT _ (TL $$) }
 
 %%
 
-Ident :: { (AbsFlatte.BNFC'Position, AbsFlatte.Ident) }
-Ident  : L_Ident { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Ident (tokenText $1)) }
+Ident :: { AbsFlatte.Ident }
+Ident  : L_Ident { AbsFlatte.Ident $1 }
 
-Integer :: { (AbsFlatte.BNFC'Position, Integer) }
-Integer  : L_integ  { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), (read (tokenText $1)) :: Integer) }
+Integer :: { Integer }
+Integer  : L_integ  { (read $1) :: Integer }
 
-String  :: { (AbsFlatte.BNFC'Position, String) }
-String   : L_quoted { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), ((\(PT _ (TL s)) -> s) $1)) }
+String  :: { String }
+String   : L_quoted { $1 }
 
-Program :: { (AbsFlatte.BNFC'Position, AbsFlatte.Program) }
-Program : FDec { (fst $1, AbsFlatte.ProgramDef (fst $1) (snd $1)) }
+Program :: { AbsFlatte.Program }
+Program : Dec { AbsFlatte.ProgramDef $1 }
 
-FDec :: { (AbsFlatte.BNFC'Position, AbsFlatte.FDec) }
-FDec : Type Ident '(' ListArg ')' ':=' Block { (fst $1, AbsFlatte.FDec (fst $1) (snd $1) (snd $2) (snd $4) (snd $7)) }
+Dec :: { AbsFlatte.Dec }
+Dec : Type Ident '(' ListArg ')' ':=' Block { AbsFlatte.FDec $1 $2 $4 $7 }
+    | Type Ident { AbsFlatte.VDec $1 $2 }
+    | Type Ident ':=' Expr { AbsFlatte.VdecInit $1 $2 $4 }
 
-Dec :: { (AbsFlatte.BNFC'Position, AbsFlatte.Dec) }
-Dec : FDec { (fst $1, AbsFlatte.Dec (fst $1) (snd $1)) }
-    | Type Ident { (fst $1, AbsFlatte.VDec (fst $1) (snd $1) (snd $2)) }
-    | Type Ident ':=' Expr { (fst $1, AbsFlatte.VdecInit (fst $1) (snd $1) (snd $2) (snd $4)) }
+Arg :: { AbsFlatte.Arg }
+Arg : Ident ':' Type { AbsFlatte.ValArg $1 $3 }
+    | Ident ':&' Type { AbsFlatte.RefArg $1 $3 }
 
-Arg :: { (AbsFlatte.BNFC'Position, AbsFlatte.Arg) }
-Arg : Ident ':' Type { (fst $1, AbsFlatte.ValArg (fst $1) (snd $1) (snd $3)) }
-    | Ident ':&' Type { (fst $1, AbsFlatte.RefArg (fst $1) (snd $1) (snd $3)) }
+ListArg :: { [AbsFlatte.Arg] }
+ListArg : {- empty -} { [] }
+        | Arg { (:[]) $1 }
+        | Arg ',' ListArg { (:) $1 $3 }
 
-ListArg :: { (AbsFlatte.BNFC'Position, [AbsFlatte.Arg]) }
-ListArg : {- empty -} { (AbsFlatte.BNFC'NoPosition, []) }
-        | Arg { (fst $1, (:[]) (snd $1)) }
-        | Arg ',' ListArg { (fst $1, (:) (snd $1) (snd $3)) }
+Block :: { AbsFlatte.Block }
+Block : '{' ListStmt '}' { AbsFlatte.BlockStmt $2 }
 
-Block :: { (AbsFlatte.BNFC'Position, AbsFlatte.Block) }
-Block : '{' ListStmt '}' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Block (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+ListStmt :: { [AbsFlatte.Stmt] }
+ListStmt : {- empty -} { [] } | Stmt ListStmt { (:) $1 $2 }
 
-ListStmt :: { (AbsFlatte.BNFC'Position, [AbsFlatte.Stmt]) }
-ListStmt : {- empty -} { (AbsFlatte.BNFC'NoPosition, []) }
-         | Stmt ListStmt { (fst $1, (:) (snd $1) (snd $2)) }
+Stmt :: { AbsFlatte.Stmt }
+Stmt : Dec ';' { AbsFlatte.DecStmt $1 }
+     | Ident ':=' Expr ';' { AbsFlatte.Assign $1 $3 }
+     | Ident '++' ';' { AbsFlatte.Incr $1 }
+     | Ident '--' ';' { AbsFlatte.Decr $1 }
+     | 'return' Expr ';' { AbsFlatte.Ret $2 }
+     | 'if' '(' Expr ')' Block { AbsFlatte.If $3 $5 }
+     | 'if' '(' Expr ')' Block 'else' Block { AbsFlatte.IfElse $3 $5 $7 }
+     | 'while' '(' Expr ')' Block { AbsFlatte.While $3 $5 }
+     | 'break' ';' { AbsFlatte.Break }
+     | 'continue' ';' { AbsFlatte.Cont }
+     | Expr ';' { AbsFlatte.SExp $1 }
 
-Stmt :: { (AbsFlatte.BNFC'Position, AbsFlatte.Stmt) }
-Stmt : Dec ';' { (fst $1, AbsFlatte.DecStmt (fst $1) (snd $1)) }
-     | Ident ':=' Expr ';' { (fst $1, AbsFlatte.Assign (fst $1) (snd $1) (snd $3)) }
-     | Ident '++' ';' { (fst $1, AbsFlatte.Incr (fst $1) (snd $1)) }
-     | Ident '--' ';' { (fst $1, AbsFlatte.Decr (fst $1) (snd $1)) }
-     | 'return' Expr ';' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Ret (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
-     | 'if' '(' Expr ')' Block { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.If (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
-     | 'if' '(' Expr ')' Block 'else' Block { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.IfElse (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $7)) }
-     | 'while' '(' Expr ')' Block { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.While (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
-     | 'break' ';' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Break (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-     | 'continue' ';' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Cont (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-     | Expr ';' { (fst $1, AbsFlatte.SExp (fst $1) (snd $1)) }
+Type :: { AbsFlatte.Type }
+Type : 'int' { AbsFlatte.Int }
+     | 'str' { AbsFlatte.Str }
+     | 'bool' { AbsFlatte.Bool }
+     | '[' ListType ']' { AbsFlatte.TypTuple $2 }
 
-Type :: { (AbsFlatte.BNFC'Position, AbsFlatte.Type) }
-Type : 'int' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Int (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-     | 'str' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Str (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-     | 'bool' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Bool (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-     | '[' ListType ']' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.TypTuple (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+ListType :: { [AbsFlatte.Type] }
+ListType : Type { (:[]) $1 } | Type ',' ListType { (:) $1 $3 }
 
-ListType :: { (AbsFlatte.BNFC'Position, [AbsFlatte.Type]) }
-ListType : Type { (fst $1, (:[]) (snd $1)) }
-         | Type ',' ListType { (fst $1, (:) (snd $1) (snd $3)) }
+Expr6 :: { AbsFlatte.Expr }
+Expr6 : Ident { AbsFlatte.EVar $1 }
+      | Integer { AbsFlatte.ELitInt $1 }
+      | String { AbsFlatte.ELitStr $1 }
+      | Tuple { AbsFlatte.ETup $1 }
+      | Expr6 '^' Integer { AbsFlatte.ETupTak $1 $3 }
+      | 'true' { AbsFlatte.ELitTrue }
+      | 'false' { AbsFlatte.ELitFalse }
+      | 'maybe' { AbsFlatte.ELitMaybe }
+      | Ident '(' ListExpr ')' { AbsFlatte.ERunFun $1 $3 }
+      | '(' Expr ')' { $2 }
 
-Expr6 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr6 : Ident { (fst $1, AbsFlatte.EVar (fst $1) (snd $1)) }
-      | Integer { (fst $1, AbsFlatte.ELitInt (fst $1) (snd $1)) }
-      | String { (fst $1, AbsFlatte.ELitStr (fst $1) (snd $1)) }
-      | Tuple { (fst $1, AbsFlatte.ETup (fst $1) (snd $1)) }
-      | Expr6 '^' Integer { (fst $1, AbsFlatte.ETupTak (fst $1) (snd $1) (snd $3)) }
-      | 'true' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.ELitTrue (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | 'false' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.ElitFalse (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | 'maybe' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.ElitMaybe (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | Ident '(' ListExpr ')' { (fst $1, AbsFlatte.ERunFun (fst $1) (snd $1) (snd $3)) }
-      | '(' Expr ')' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), (snd $2)) }
+Tuple :: { AbsFlatte.Tuple }
+Tuple : '[' ListExpr ']' { AbsFlatte.ETuple $2 }
 
-Tuple :: { (AbsFlatte.BNFC'Position, AbsFlatte.Tuple) }
-Tuple : '[' ListExpr ']' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Tuple (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+Expr5 :: { AbsFlatte.Expr }
+Expr5 : '-' Expr6 { AbsFlatte.EMinus $2 }
+      | '!' Expr6 { AbsFlatte.ENot $2 }
+      | Expr6 { $1 }
 
-Expr5 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr5 : '-' Expr6 { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.EMinus (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
-      | '!' Expr6 { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.ENot (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1)) (snd $2)) }
-      | Expr6 { (fst $1, (snd $1)) }
+Expr4 :: { AbsFlatte.Expr }
+Expr4 : Expr4 MulOp Expr5 { AbsFlatte.EMul $1 $2 $3 }
+      | Expr5 { $1 }
 
-Expr4 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr4 : Expr4 MulOp Expr5 { (fst $1, AbsFlatte.EMul (fst $1) (snd $1) (snd $2) (snd $3)) }
-      | Expr5 { (fst $1, (snd $1)) }
+Expr3 :: { AbsFlatte.Expr }
+Expr3 : Expr3 AddOp Expr4 { AbsFlatte.EAdd $1 $2 $3 }
+      | Expr4 { $1 }
 
-Expr3 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr3 : Expr3 AddOp Expr4 { (fst $1, AbsFlatte.EAdd (fst $1) (snd $1) (snd $2) (snd $3)) }
-      | Expr4 { (fst $1, (snd $1)) }
+Expr2 :: { AbsFlatte.Expr }
+Expr2 : Expr2 CompOp Expr3 { AbsFlatte.EComp $1 $2 $3 }
+      | Expr3 { $1 }
 
-Expr2 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr2 : Expr2 CompOp Expr3 { (fst $1, AbsFlatte.EComp (fst $1) (snd $1) (snd $2) (snd $3)) }
-      | Expr3 { (fst $1, (snd $1)) }
+Expr1 :: { AbsFlatte.Expr }
+Expr1 : Expr2 '&&' Expr1 { AbsFlatte.EAnd $1 $3 } | Expr2 { $1 }
 
-Expr1 :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr1 : Expr2 '&&' Expr1 { (fst $1, AbsFlatte.EAnd (fst $1) (snd $1) (snd $3)) }
-      | Expr2 { (fst $1, (snd $1)) }
+Expr :: { AbsFlatte.Expr }
+Expr : Expr1 '||' Expr { AbsFlatte.EOr $1 $3 } | Expr1 { $1 }
 
-Expr :: { (AbsFlatte.BNFC'Position, AbsFlatte.Expr) }
-Expr : Expr1 '||' Expr { (fst $1, AbsFlatte.EOr (fst $1) (snd $1) (snd $3)) }
-     | Expr1 { (fst $1, (snd $1)) }
+ListExpr :: { [AbsFlatte.Expr] }
+ListExpr : {- empty -} { [] }
+         | Expr { (:[]) $1 }
+         | Expr ',' ListExpr { (:) $1 $3 }
 
-ListExpr :: { (AbsFlatte.BNFC'Position, [AbsFlatte.Expr]) }
-ListExpr : {- empty -} { (AbsFlatte.BNFC'NoPosition, []) }
-         | Expr { (fst $1, (:[]) (snd $1)) }
-         | Expr ',' ListExpr { (fst $1, (:) (snd $1) (snd $3)) }
+AddOp :: { AbsFlatte.AddOp }
+AddOp : '+' { AbsFlatte.Plus } | '-' { AbsFlatte.Minus }
 
-AddOp :: { (AbsFlatte.BNFC'Position, AbsFlatte.AddOp) }
-AddOp : '+' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Plus (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | '-' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Minus (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
+MulOp :: { AbsFlatte.MulOp }
+MulOp : '*' { AbsFlatte.Times }
+      | '/' { AbsFlatte.Div }
+      | '%' { AbsFlatte.Mod }
 
-MulOp :: { (AbsFlatte.BNFC'Position, AbsFlatte.MulOp) }
-MulOp : '*' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Times (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | '/' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Div (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-      | '%' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.Mod (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-
-CompOp :: { (AbsFlatte.BNFC'Position, AbsFlatte.CompOp) }
-CompOp : '<' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.LTH (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-       | '<=' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.LE (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-       | '>' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.GTH (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-       | '>=' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.GE (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-       | '==' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.EQU (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
-       | '!=' { (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1), AbsFlatte.NE (uncurry AbsFlatte.BNFC'Position (tokenLineCol $1))) }
+CompOp :: { AbsFlatte.CompOp }
+CompOp : '<' { AbsFlatte.LTH }
+       | '<=' { AbsFlatte.LE }
+       | '>' { AbsFlatte.GTH }
+       | '>=' { AbsFlatte.GE }
+       | '==' { AbsFlatte.EQU }
+       | '!=' { AbsFlatte.NE }
 {
 
 type Err = Either String
@@ -200,9 +192,5 @@ happyError ts = Left $
 myLexer :: String -> [Token]
 myLexer = tokens
 
--- Entrypoints
-
-pProgram :: [Token] -> Err AbsFlatte.Program
-pProgram = fmap snd . pProgram_internal
 }
 

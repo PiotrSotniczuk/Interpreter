@@ -110,108 +110,108 @@ instance Print Double where
 instance Print AbsFlatte.Ident where
   prt _ (AbsFlatte.Ident i) = doc $ showString i
 
-instance Print (AbsFlatte.Program' a) where
+instance Print AbsFlatte.Program where
   prt i = \case
-    AbsFlatte.ProgramDef _ dec -> prPrec i 0 (concatD [prt 0 dec])
+    AbsFlatte.ProgramDef dec -> prPrec i 0 (concatD [prt 0 dec])
 
-instance Print (AbsFlatte.Dec' a) where
+instance Print AbsFlatte.Dec where
   prt i = \case
-    AbsFlatte.FDec _ type_ id_ args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ":="), prt 0 block])
-    AbsFlatte.VDec _ type_ id_ -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_])
-    AbsFlatte.VdecInit _ type_ id_ expr -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString ":="), prt 0 expr])
+    AbsFlatte.FDec type_ id_ args block -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ":="), prt 0 block])
+    AbsFlatte.VDec type_ id_ -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_])
+    AbsFlatte.VdecInit type_ id_ expr -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString ":="), prt 0 expr])
 
-instance Print (AbsFlatte.Arg' a) where
+instance Print AbsFlatte.Arg where
   prt i = \case
-    AbsFlatte.ValArg _ id_ type_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":"), prt 0 type_])
-    AbsFlatte.RefArg _ id_ type_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":&"), prt 0 type_])
+    AbsFlatte.ValArg id_ type_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":"), prt 0 type_])
+    AbsFlatte.RefArg id_ type_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":&"), prt 0 type_])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print [AbsFlatte.Arg' a] where
+instance Print [AbsFlatte.Arg] where
   prt = prtList
 
-instance Print (AbsFlatte.Block' a) where
+instance Print AbsFlatte.Block where
   prt i = \case
-    AbsFlatte.Block _ stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "}")])
+    AbsFlatte.BlockStmt stmts -> prPrec i 0 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "}")])
 
-instance Print [AbsFlatte.Stmt' a] where
+instance Print [AbsFlatte.Stmt] where
   prt = prtList
 
-instance Print (AbsFlatte.Stmt' a) where
+instance Print AbsFlatte.Stmt where
   prt i = \case
-    AbsFlatte.DecStmt _ dec -> prPrec i 0 (concatD [prt 0 dec, doc (showString ";")])
-    AbsFlatte.Assign _ id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":="), prt 0 expr, doc (showString ";")])
-    AbsFlatte.Incr _ id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "++"), doc (showString ";")])
-    AbsFlatte.Decr _ id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "--"), doc (showString ";")])
-    AbsFlatte.Ret _ expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
-    AbsFlatte.If _ expr block -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
-    AbsFlatte.IfElse _ expr block1 block2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block1, doc (showString "else"), prt 0 block2])
-    AbsFlatte.While _ expr block -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
-    AbsFlatte.Break _ -> prPrec i 0 (concatD [doc (showString "break"), doc (showString ";")])
-    AbsFlatte.Cont _ -> prPrec i 0 (concatD [doc (showString "continue"), doc (showString ";")])
-    AbsFlatte.SExp _ expr -> prPrec i 0 (concatD [prt 0 expr, doc (showString ";")])
+    AbsFlatte.DecStmt dec -> prPrec i 0 (concatD [prt 0 dec, doc (showString ";")])
+    AbsFlatte.Assign id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":="), prt 0 expr, doc (showString ";")])
+    AbsFlatte.Incr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "++"), doc (showString ";")])
+    AbsFlatte.Decr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "--"), doc (showString ";")])
+    AbsFlatte.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
+    AbsFlatte.If expr block -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
+    AbsFlatte.IfElse expr block1 block2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block1, doc (showString "else"), prt 0 block2])
+    AbsFlatte.While expr block -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
+    AbsFlatte.Break -> prPrec i 0 (concatD [doc (showString "break"), doc (showString ";")])
+    AbsFlatte.Cont -> prPrec i 0 (concatD [doc (showString "continue"), doc (showString ";")])
+    AbsFlatte.SExp expr -> prPrec i 0 (concatD [prt 0 expr, doc (showString ";")])
   prtList _ [] = concatD []
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 
-instance Print (AbsFlatte.Type' a) where
+instance Print AbsFlatte.Type where
   prt i = \case
-    AbsFlatte.Int _ -> prPrec i 0 (concatD [doc (showString "int")])
-    AbsFlatte.Str _ -> prPrec i 0 (concatD [doc (showString "str")])
-    AbsFlatte.Bool _ -> prPrec i 0 (concatD [doc (showString "bool")])
-    AbsFlatte.TypTuple _ types -> prPrec i 0 (concatD [doc (showString "["), prt 0 types, doc (showString "]")])
+    AbsFlatte.Int -> prPrec i 0 (concatD [doc (showString "int")])
+    AbsFlatte.Str -> prPrec i 0 (concatD [doc (showString "str")])
+    AbsFlatte.Bool -> prPrec i 0 (concatD [doc (showString "bool")])
+    AbsFlatte.TypTuple types -> prPrec i 0 (concatD [doc (showString "["), prt 0 types, doc (showString "]")])
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print [AbsFlatte.Type' a] where
+instance Print [AbsFlatte.Type] where
   prt = prtList
 
-instance Print (AbsFlatte.Expr' a) where
+instance Print AbsFlatte.Expr where
   prt i = \case
-    AbsFlatte.EVar _ id_ -> prPrec i 6 (concatD [prt 0 id_])
-    AbsFlatte.ELitInt _ n -> prPrec i 6 (concatD [prt 0 n])
-    AbsFlatte.ELitStr _ str -> prPrec i 6 (concatD [prt 0 str])
-    AbsFlatte.ETup _ tuple -> prPrec i 6 (concatD [prt 0 tuple])
-    AbsFlatte.ETupTak _ expr n -> prPrec i 6 (concatD [prt 6 expr, doc (showString "^"), prt 0 n])
-    AbsFlatte.ELitTrue _ -> prPrec i 6 (concatD [doc (showString "true")])
-    AbsFlatte.ElitFalse _ -> prPrec i 6 (concatD [doc (showString "false")])
-    AbsFlatte.ElitMaybe _ -> prPrec i 6 (concatD [doc (showString "maybe")])
-    AbsFlatte.ERunFun _ id_ exprs -> prPrec i 6 (concatD [prt 0 id_, doc (showString "("), prt 0 exprs, doc (showString ")")])
-    AbsFlatte.EMinus _ expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
-    AbsFlatte.ENot _ expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])
-    AbsFlatte.EMul _ expr1 mulop expr2 -> prPrec i 4 (concatD [prt 4 expr1, prt 0 mulop, prt 5 expr2])
-    AbsFlatte.EAdd _ expr1 addop expr2 -> prPrec i 3 (concatD [prt 3 expr1, prt 0 addop, prt 4 expr2])
-    AbsFlatte.EComp _ expr1 compop expr2 -> prPrec i 2 (concatD [prt 2 expr1, prt 0 compop, prt 3 expr2])
-    AbsFlatte.EAnd _ expr1 expr2 -> prPrec i 1 (concatD [prt 2 expr1, doc (showString "&&"), prt 1 expr2])
-    AbsFlatte.EOr _ expr1 expr2 -> prPrec i 0 (concatD [prt 1 expr1, doc (showString "||"), prt 0 expr2])
+    AbsFlatte.EVar id_ -> prPrec i 6 (concatD [prt 0 id_])
+    AbsFlatte.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
+    AbsFlatte.ELitStr str -> prPrec i 6 (concatD [prt 0 str])
+    AbsFlatte.ETup tuple -> prPrec i 6 (concatD [prt 0 tuple])
+    AbsFlatte.ETupTak expr n -> prPrec i 6 (concatD [prt 6 expr, doc (showString "^"), prt 0 n])
+    AbsFlatte.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
+    AbsFlatte.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
+    AbsFlatte.ELitMaybe -> prPrec i 6 (concatD [doc (showString "maybe")])
+    AbsFlatte.ERunFun id_ exprs -> prPrec i 6 (concatD [prt 0 id_, doc (showString "("), prt 0 exprs, doc (showString ")")])
+    AbsFlatte.EMinus expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
+    AbsFlatte.ENot expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])
+    AbsFlatte.EMul expr1 mulop expr2 -> prPrec i 4 (concatD [prt 4 expr1, prt 0 mulop, prt 5 expr2])
+    AbsFlatte.EAdd expr1 addop expr2 -> prPrec i 3 (concatD [prt 3 expr1, prt 0 addop, prt 4 expr2])
+    AbsFlatte.EComp expr1 compop expr2 -> prPrec i 2 (concatD [prt 2 expr1, prt 0 compop, prt 3 expr2])
+    AbsFlatte.EAnd expr1 expr2 -> prPrec i 1 (concatD [prt 2 expr1, doc (showString "&&"), prt 1 expr2])
+    AbsFlatte.EOr expr1 expr2 -> prPrec i 0 (concatD [prt 1 expr1, doc (showString "||"), prt 0 expr2])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print (AbsFlatte.Tuple' a) where
+instance Print AbsFlatte.Tuple where
   prt i = \case
-    AbsFlatte.Tuple _ exprs -> prPrec i 0 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
+    AbsFlatte.ETuple exprs -> prPrec i 0 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
 
-instance Print [AbsFlatte.Expr' a] where
+instance Print [AbsFlatte.Expr] where
   prt = prtList
 
-instance Print (AbsFlatte.AddOp' a) where
+instance Print AbsFlatte.AddOp where
   prt i = \case
-    AbsFlatte.Plus _ -> prPrec i 0 (concatD [doc (showString "+")])
-    AbsFlatte.Minus _ -> prPrec i 0 (concatD [doc (showString "-")])
+    AbsFlatte.Plus -> prPrec i 0 (concatD [doc (showString "+")])
+    AbsFlatte.Minus -> prPrec i 0 (concatD [doc (showString "-")])
 
-instance Print (AbsFlatte.MulOp' a) where
+instance Print AbsFlatte.MulOp where
   prt i = \case
-    AbsFlatte.Times _ -> prPrec i 0 (concatD [doc (showString "*")])
-    AbsFlatte.Div _ -> prPrec i 0 (concatD [doc (showString "/")])
-    AbsFlatte.Mod _ -> prPrec i 0 (concatD [doc (showString "%")])
+    AbsFlatte.Times -> prPrec i 0 (concatD [doc (showString "*")])
+    AbsFlatte.Div -> prPrec i 0 (concatD [doc (showString "/")])
+    AbsFlatte.Mod -> prPrec i 0 (concatD [doc (showString "%")])
 
-instance Print (AbsFlatte.CompOp' a) where
+instance Print AbsFlatte.CompOp where
   prt i = \case
-    AbsFlatte.LTH _ -> prPrec i 0 (concatD [doc (showString "<")])
-    AbsFlatte.LE _ -> prPrec i 0 (concatD [doc (showString "<=")])
-    AbsFlatte.GTH _ -> prPrec i 0 (concatD [doc (showString ">")])
-    AbsFlatte.GE _ -> prPrec i 0 (concatD [doc (showString ">=")])
-    AbsFlatte.EQU _ -> prPrec i 0 (concatD [doc (showString "==")])
-    AbsFlatte.NE _ -> prPrec i 0 (concatD [doc (showString "!=")])
+    AbsFlatte.LTH -> prPrec i 0 (concatD [doc (showString "<")])
+    AbsFlatte.LE -> prPrec i 0 (concatD [doc (showString "<=")])
+    AbsFlatte.GTH -> prPrec i 0 (concatD [doc (showString ">")])
+    AbsFlatte.GE -> prPrec i 0 (concatD [doc (showString ">=")])
+    AbsFlatte.EQU -> prPrec i 0 (concatD [doc (showString "==")])
+    AbsFlatte.NE -> prPrec i 0 (concatD [doc (showString "!=")])
 

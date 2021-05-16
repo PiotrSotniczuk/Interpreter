@@ -22,7 +22,9 @@ import LexFlatte   ( Token )
 import ParFlatte   ( pProgram, myLexer )
 import PrintFlatte ( Print, printTree )
 import SkelFlatte  ()
-import Helpers     (initEnv, initStore, runInterpreter, runInterM)
+
+import DataTypes     (initEnv, initStore, runInterM)
+import Helpers        (runInterpreter)
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a

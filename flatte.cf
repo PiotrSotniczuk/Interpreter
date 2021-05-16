@@ -20,7 +20,7 @@ separator 	Arg "," ;
 
 -- statements ----------------------------------------------
 
-Block.     	Block ::= "{" [Stmt] "}" ;
+BlockStmt.  Block ::= "{" [Stmt] "}" ;
 
 separator  	Stmt "" ;
 
@@ -70,13 +70,13 @@ ETup.		Expr6 ::= Tuple ;
 
 ETupTak.	Expr6 ::= Expr6 "^" Integer ;
 
-Tuple.		Tuple ::= "[" [Expr] "]" ;
+ETuple.		Tuple ::= "[" [Expr] "]" ;
 
 ELitTrue. 	Expr6 ::= "true" ;
 
-ElitFalse.	Expr6 ::= "false" ;
+ELitFalse.	Expr6 ::= "false" ;
 
-ElitMaybe.	Expr6 ::= "maybe" ;
+ELitMaybe.	Expr6 ::= "maybe" ;
 
 ERunFun.   	Expr6 ::= Ident "(" [Expr] ")" ;
 

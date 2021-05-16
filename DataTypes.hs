@@ -21,7 +21,15 @@ type Store = M.Map Loc Value
 data Value = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
     deriving (Eq, Ord)
 
-data RetInfo = Return Value | RetEnv Env | Break | Continue
+instance Show (Value) where
+    show (VInt a) = show a
+    show (VBool a) = show a
+    show (VString a) = show a
+    show (VFunc env args block) = show "A function"
+    show (VNull) = show "NULL"
+
+
+data RetInfo = Return Value | RetEnv Env | RetBreak | RetContinue
 
 initEnv :: Env
 initEnv = M.empty

@@ -44,7 +44,7 @@ run s =
       exitFailure
     Right tree -> do
       putStrLn "\nParse Successful!"
-      showTree tree
+      --showTree tree
       (val, store) <- runInterM initEnv initStore (runInterpreter tree)       
       case val of
             Left e  -> hPutStrLn stderr e

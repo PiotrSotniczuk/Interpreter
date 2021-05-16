@@ -15,47 +15,7 @@ import ErrM
 import PrintFlatte
 
 import DataTypes
-
-getNewLoc :: Store -> Int
-getNewLoc s = M.size s + 1
-
-setValToLoc :: Loc -> Value -> InterpreterM ()
-setValToLoc loc val = do
-    new_store <- M.insert loc val <$> get
-    put new_store
-
-saveVarInEnv :: Type -> Ident -> InterpreterM Env
-saveVarInEnv t id = do
-    loc <- getNewLoc <$> get
-    env <- asks (M.insert id loc)
-    setValToLoc loc VNull
-    return env
-
-getLocFromVar :: Ident -> InterpreterM Loc
-getLocFromVar id = do
-    loc <- asks (M.lookup id)
-    case loc of
-        Nothing   -> throwError $ "Error: variable " ++ show id ++ " is not declared"
-        Just addr -> return addr
-
-getValFromLoc :: Loc -> InterpreterM Value
-getValFromLoc loc = do
-    val <- M.lookup loc <$> get
-    case val of
-        Nothing    -> throwError "CRITICAL ERROR: This never should've happen"
-        Just VNull -> throwError "Error: variable is not assigned"
-        Just v     -> return v
-
-getVarVal :: Ident -> InterpreterM Value
-getVarVal id = do
-    loc <- getLocFromVar id
-    getValFromLoc loc
-
-setValToVar :: Ident -> Value -> InterpreterM ()
-setValToVar id val = do
-    loc <- getLocFromVar id
-    setValToLoc loc val
-
+import EnvStore
 
 declare :: Dec -> InterpreterM Env
 declare (FDec t id args block) = do
@@ -92,6 +52,37 @@ executeStmt (Ret expr) = do
 executeStmt (DecStmt dec) = do
     env <- declare dec
     return (RetEnv env)
+executeStmt (Assign id expr) = do
+    val <- evalExpr expr
+    env <- ask
+    setValToVar id val
+    return (RetEnv env)
+executeStmt (Incr id) = do
+    VInt val <- getVarVal id
+    env <- ask
+    setValToVar id (VInt (val + 1))
+    return (RetEnv env)
+executeStmt (Decr id) = do
+    VInt val <- getVarVal id
+    env <- ask
+    setValToVar id (VInt (val - 1))
+    return (RetEnv env)
+executeStmt (If expr block) = do
+    VBool bool <- evalExpr expr
+    env <- ask
+    if bool then executeBlock block
+    else return (RetEnv env)
+executeStmt (IfElse expr blockT blockF) = do
+    VBool bool <- evalExpr expr
+    env <- ask
+    if bool then executeBlock blockT
+    else executeBlock blockF
+executeStmt (SExp expr) = do
+    val <- evalExpr expr
+    env <- ask
+    return (RetEnv env)
+executeStmt (Break) = return RetBreak
+executeStmt (continue) = return RetContinue
 
 
 executeBlock :: Block -> InterpreterM RetInfo
@@ -117,11 +108,39 @@ evalExpr (ELitTrue )                = return (VBool True)
 evalExpr (ELitFalse)                = return (VBool False)
 --evalExpr (ELitMaybe)                = return (VBool True)
 evalExpr (EVar id)             = getVarVal id
---evalExpr (EUnar not expr)      = notVBool    <$> evalExpr expr
---evalExpr (ELog expr1 op expr2) = logVBool op <$> evalExpr expr1 <*> evalExpr expr2
---evalExpr (ECmp expr1 op expr2) = cmpVInt  op <$> evalExpr expr1 <*> evalExpr expr2
---evalExpr (EMul expr1 op expr2) = mulVInt  op <$> evalExpr expr1 <*> evalExpr expr2
---evalExpr (EAdd expr1 op expr2) = addVInt  op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EMinus expr) = do
+    VInt int <- evalExpr expr
+    return (VInt (-1*int))
+evalExpr (ENot expr) = do
+    VBool bool <- evalExpr expr
+    return (VBool (not bool))
+evalExpr (EMul expr1 mulOp expr2) = do
+    VInt val1 <- evalExpr expr1
+    VInt val2 <- evalExpr expr2
+    case mulOp of
+        Times -> return (VInt (val1 * val2))
+        Div -> return (VInt (div val1 val2))
+        Mod -> return (VInt (mod val1 val2))
+evalExpr (EAdd expr1 addOp expr2) = do
+    VInt val1 <- evalExpr expr1
+    VInt val2 <- evalExpr expr2
+    case addOp of
+        Plus -> return (VInt (val1 + val2))
+        Minus -> return (VInt  (val1 - val2))
+evalExpr (EComp expr1 compOp expr2) = do
+    VInt val1 <- evalExpr expr1
+    VInt val2 <- evalExpr expr2
+    case compOp of
+        LTH -> return (VBool (val1 < val2))
+        LE -> return (VBool (val1 <= val2)) 
+        GTH -> return (VBool (val1 > val2)) 
+        GE -> return (VBool (val1 >= val2)) 
+        EQU -> return (VBool (val1 == val2)) 
+        NE -> return (VBool (val1 /= val2))
+evalExpr (ERunFun (Ident "print") in_args) = do
+    in_vals <- evalFuncExprs in_args
+    liftIO (putStrLn $ "PRINT: " ++ (show in_vals))
+    return (VInt 0)
 evalExpr (ERunFun id in_args)       = do
     VFunc env env_args block <- evalExpr (EVar id)
     in_vals                   <- evalFuncExprs in_args
@@ -134,7 +153,6 @@ evalExpr (ERunFun id in_args)       = do
 
 runInterpreter :: Program -> InterpreterM Integer
 runInterpreter (ProgramDef mainDec) = do
-    liftIO (putStrLn (show mainDec))
     env      <- declare mainDec
     VInt val <- local (const env) (evalExpr (ERunFun (Ident "main") []))
     return val

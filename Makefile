@@ -25,7 +25,7 @@ AbsFlatte.hs LexFlatte.x ParFlatte.y PrintFlatte.hs Main.hs : flatte.cf
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-Main : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs Helpers.hs DataTypes.hs Main.hs
+Main : AbsFlatte.hs LexFlatte.hs ParFlatte.hs PrintFlatte.hs Helpers.hs EnvStore.hs DataTypes.hs Main.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.

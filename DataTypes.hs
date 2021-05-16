@@ -18,15 +18,14 @@ type Loc = Int
 type Env = M.Map Ident Loc
 type Store = M.Map Loc Value
 
-data Value = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
+data Value = VInt Integer | VBool Bool | VString String | VFunc Env Type [Arg] Block
     deriving (Eq, Ord)
 
 instance Show (Value) where
     show (VInt a) = show a
     show (VBool a) = show a
     show (VString a) = show a
-    show (VFunc env args block) = show "A function"
-    show (VNull) = show "NULL"
+    show (VFunc env t args block) = show "FUNCTION: ..."
 
 
 data RetInfo = Return Value | RetEnv Env | RetBreak | RetContinue

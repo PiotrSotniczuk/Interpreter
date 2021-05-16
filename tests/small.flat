@@ -1,15 +1,8 @@
 int main() := {
-    int x := 4;
-    x++;
-    x := 10;
+    int fun1 (a : int, b : int) := {
+        return true;
+    };
+    int x := 1;
 
-    print(x);
-
-    if (5 <= x){
-        x--;
-    }else{
-        return 3*x;
-    }
-
-    return 15*3;
+    return fun1(1,4);
 }

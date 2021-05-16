@@ -17,10 +17,20 @@ import PrintFlatte
 import DataTypes
 import EnvStore
 
+--import Data.Time
+--import Data.Time.Clock.POSIX
+--import Data.Int
+
+import System.Random
+
+--nanosSinceEpoch :: UTCTime -> Int64
+--nanosSinceEpoch =
+--    floor . (1e9 *) . nominalDiffTimeToSeconds . utcTimeToPOSIXSeconds
+
 declare :: Dec -> InterpreterM Env
 declare (FDec t id args block) = do
     env <- saveVarInEnv t id
-    local (const env) (setValToVar id (VFunc env args block))
+    local (const env) (setValToVar id (VFunc env t args block))
     return env
 declare (VDec t id) = do
     env <- saveVarInEnv t id
@@ -39,6 +49,8 @@ assignFuncArgs :: [Arg] -> [Value] -> InterpreterM Env
 --TODO check length
 --TODO REF
 assignFuncArgs [] [] = ask
+assignFuncArgs [] a = throwError "ERROR: number of args for function not correct" 
+assignFuncArgs a [] = throwError "ERROR: number of args for function not correct" 
 assignFuncArgs ((ValArg id t):args) (v:vs) = do
     env <- saveVarInEnv t id
     local (const env) $ setValToVar id v
@@ -82,7 +94,7 @@ executeStmt (SExp expr) = do
     env <- ask
     return (RetEnv env)
 executeStmt (Break) = return RetBreak
-executeStmt (continue) = return RetContinue
+executeStmt (Cont) = return RetContinue
 
 
 executeBlock :: Block -> InterpreterM RetInfo
@@ -106,7 +118,11 @@ evalExpr (ELitInt val)            = return (VInt val)
 evalExpr (ELitStr str)            = return (VString str)
 evalExpr (ELitTrue )                = return (VBool True)
 evalExpr (ELitFalse)                = return (VBool False)
---evalExpr (ELitMaybe)                = return (VBool True)
+evalExpr (ELitMaybe)                = do
+    --u <- getCurrentTime
+    --millis <- nanosSinceEpoch u
+    return (VBool True)
+    
 evalExpr (EVar id)             = getVarVal id
 evalExpr (EMinus expr) = do
     VInt int <- evalExpr expr
@@ -142,12 +158,16 @@ evalExpr (ERunFun (Ident "print") in_args) = do
     liftIO (putStrLn $ "PRINT: " ++ (show in_vals))
     return (VInt 0)
 evalExpr (ERunFun id in_args)       = do
-    VFunc env env_args block <- evalExpr (EVar id)
+    VFunc env t env_args block <- evalExpr (EVar id)
     in_vals                   <- evalFuncExprs in_args
-    env'                 <- local (const env)  $ assignFuncArgs env_args in_vals
-    ret                  <- local (const env') $ executeBlock block
+    env' <- local (const env)  $ assignFuncArgs env_args in_vals
+    ret  <- local (const env') $ executeBlock block
     case ret of
-        Return val      -> return val
+        Return val -> do
+            retType <- getType val
+            if t == retType then return val
+            else throwError "ERROR: function returns mismatched type"
+                                
         --breakOrCont     -> throwError "Error: break/continue out of loop"
 
 

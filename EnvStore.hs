@@ -28,8 +28,16 @@ saveVarInEnv :: Type -> Ident -> InterpreterM Env
 saveVarInEnv t id = do
     loc <- getNewLoc <$> get
     env <- asks (M.insert id loc)
-    setValToLoc loc VNull
-    return env
+    case t of
+        Int -> do 
+            setValToLoc loc (VInt 0)
+            return env
+        Str -> do
+            setValToLoc loc (VString "")
+            return env
+        Bool -> do
+            setValToLoc loc (VBool True)
+            return env
 
 getLocFromVar :: Ident -> InterpreterM Loc
 getLocFromVar id = do
@@ -43,7 +51,6 @@ getValFromLoc loc = do
     val <- M.lookup loc <$> get
     case val of
         Nothing    -> throwError "CRITICAL ERROR: This never should've happen"
-        Just VNull -> throwError "Error: variable is not assigned"
         Just v     -> return v
 
 getVarVal :: Ident -> InterpreterM Value
@@ -52,6 +59,18 @@ getVarVal id = do
     getValFromLoc loc
 
 setValToVar :: Ident -> Value -> InterpreterM ()
-setValToVar id val = do
+setValToVar id val = do   
+    act_type <- getType val
+    last_val <- getVarVal id
+    last_type <- getType last_val    
     loc <- getLocFromVar id
-    setValToLoc loc val
+    if (act_type == last_type) then
+        setValToLoc loc val
+    else 
+        throwError "TYPE ERROR: value does not match declared type"
+
+getType :: Value -> InterpreterM Type
+getType (VBool a) = return Bool
+getType (VString a) = return Str
+getType (VInt a) = return Int
+getType (VFunc env t args block) = return t

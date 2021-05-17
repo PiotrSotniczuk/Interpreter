@@ -1,15 +1,4 @@
 int main() := {
-    int a := 10;
-    int fun() := {
-        return a+2;
-    };
-    print(a);
-    int fun2() := {
-        int a := 5;
-        print(fun(), a);
-        a++;
-        return 0;
-    };
-    fun2();
-    return fun2();
+    print(3 == 3);
+    return 2;
 }

@@ -6,6 +6,7 @@ int main () := {
         print("I am infinite");
     }
 
+    m := true;
     // it will stop sooner or later
     while(m) {
         m := maybe;

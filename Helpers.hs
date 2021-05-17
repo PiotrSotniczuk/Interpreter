@@ -38,7 +38,6 @@ evalExprs [] = return []
 evalExprs (x:xs) = (:) <$> evalExpr x <*> evalExprs xs
 
 assignFuncArgs :: Env -> [Arg] -> [Expr] -> InterpreterM Env
---TODO REF
 assignFuncArgs fun_env [] [] = return fun_env
 assignFuncArgs fun_env [] exprs = throwError "ERROR: number of args for function not correct" 
 assignFuncArgs fun_env args [] = throwError "ERROR: number of args for function not correct" 
@@ -122,32 +121,8 @@ executeBlock (BlockStmt (stmt:stmts)) = do
         RetEnv env   -> local (const env) $ executeBlock (BlockStmt stmts)
         any -> return any
 
-
---evalMaybe :: IO Bool
---evalMaybe = do
---    randomNum <- randomRIO (0,1)
---    return (randomNum == 0)
-
-evalExpr :: Expr -> InterpreterM Value
-evalExpr (ELitInt val)            = return (VInt val)
-evalExpr (ELitStr str)            = return (VString str)
-evalExpr (ELitTrue )                = return (VBool True)
-evalExpr (ELitFalse)                = return (VBool False)
-evalExpr (ELitMaybe)                = do
-    --u <- getCurrentTime
-    --millis <- nanosSinceEpoch u
-    return (VBool True)
-    
-evalExpr (EVar id)             = getVarVal id
-evalExpr (EMinus expr) = do
-    VInt int <- evalExpr expr
-    return (VInt (-1*int))
-evalExpr (ENot expr) = do
-    VBool bool <- evalExpr expr
-    return (VBool (not bool))
-evalExpr (EMul expr1 mulOp expr2) = do
-    VInt val1 <- evalExpr expr1
-    VInt val2 <- evalExpr expr2
+evalMulOp :: Value -> Value -> MulOp -> InterpreterM Value
+evalMulOp (VInt val1) (VInt val2) mulOp = do
     case mulOp of
         Times -> return (VInt (val1 * val2))
         Div -> do
@@ -156,15 +131,17 @@ evalExpr (EMul expr1 mulOp expr2) = do
         Mod -> do
             if (val2 == 0) then throwError "ERROR: Can't do modulo by zero"
             else return (VInt (mod val1 val2))
-evalExpr (EAdd expr1 addOp expr2) = do
-    VInt val1 <- evalExpr expr1
-    VInt val2 <- evalExpr expr2
+evalMulOp a b c = throwError "ERROR: aritmetic operations only apply to Ints"
+
+evalAddOp :: Value -> Value -> AddOp -> InterpreterM Value
+evalAddOp (VInt val1) (VInt val2) addOp = do
     case addOp of
         Plus -> return (VInt (val1 + val2))
         Minus -> return (VInt  (val1 - val2))
-evalExpr (EComp expr1 compOp expr2) = do
-    VInt val1 <- evalExpr expr1
-    VInt val2 <- evalExpr expr2
+evalAddOp a b c = throwError "ERROR: aritmetic operations only apply to Ints"
+
+evalCompOp :: Value -> Value -> CompOp -> InterpreterM Value
+evalCompOp (VInt val1) (VInt val2) compOp = do
     case compOp of
         LTH -> return (VBool (val1 < val2))
         LE -> return (VBool (val1 <= val2)) 
@@ -172,6 +149,63 @@ evalExpr (EComp expr1 compOp expr2) = do
         GE -> return (VBool (val1 >= val2)) 
         EQU -> return (VBool (val1 == val2)) 
         NE -> return (VBool (val1 /= val2))
+evalCompOp a b c = throwError "ERROR: compare operations only apply to Ints"
+    
+evalOr :: Value -> Value -> InterpreterM Value
+evalOr (VBool b1) (VBool b2) = do
+    return (VBool (b1 || b2))
+evalOr a b = throwError "ERROR: 'or' operation only apply to Bool"
+
+evalAnd :: Value -> Value -> InterpreterM Value
+evalAnd (VBool b1) (VBool b2) = do
+    return (VBool (b1 && b2))
+evalAnd a b = throwError "ERROR: 'and' operation only apply to Bool"
+
+
+evalExpr :: Expr -> InterpreterM Value
+evalExpr (ELitInt val)            = return (VInt val)
+evalExpr (ELitStr str)            = return (VString str)
+evalExpr (ELitTrue )                = return (VBool True)
+evalExpr (ELitFalse)                = return (VBool False)
+evalExpr (ELitMaybe)                = do
+    bool <- liftIO (randomIO )
+    return (VBool bool)
+evalExpr (EVar id)             = getVarVal id
+evalExpr (EMinus expr) = do
+    val <- evalExpr expr
+    case val of
+        VInt int -> return (VInt (-1*int))
+        any -> throwError "ERROR: minus can be applied only to int type"
+evalExpr (ENot expr) = do
+    val <- evalExpr expr
+    case val of
+        VBool bool -> return (VBool (not bool))
+        any -> throwError "ERROR: not can be applied only to bool type"
+evalExpr (EMul expr1 mulOp expr2) = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    res <- evalMulOp val1 val2 mulOp
+    return res
+evalExpr (EAdd expr1 addOp expr2) = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    res <- evalAddOp val1 val2 addOp
+    return res
+evalExpr (EComp expr1 compOp expr2) = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    res <- evalCompOp val1 val2 compOp
+    return res
+evalExpr (EOr expr1 expr2) = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    res <- evalOr val1 val2
+    return res
+evalExpr (EAnd expr1 expr2) = do
+    val1 <- evalExpr expr1
+    val2 <- evalExpr expr2
+    res <- evalAnd val1 val2
+    return res
 evalExpr (ERunFun (Ident "print") exprs) = do
     vals <- evalExprs exprs
     liftIO (putStrLn $ "PRINT: " ++ (show vals))

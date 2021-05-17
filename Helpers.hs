@@ -33,19 +33,25 @@ declare (VdecInit t id expr) = do
     local (const env) (setValToVar id val)
     return env
 
-evalFuncExprs :: [Expr] -> InterpreterM [Value]
-evalFuncExprs [] = return []
-evalFuncExprs (x:xs) = (:) <$> evalExpr x <*> evalFuncExprs xs
+evalExprs :: [Expr] -> InterpreterM [Value]
+evalExprs [] = return []
+evalExprs (x:xs) = (:) <$> evalExpr x <*> evalExprs xs
 
-assignFuncArgs :: [Arg] -> [Value] -> InterpreterM Env
+assignFuncArgs :: Env -> [Arg] -> [Expr] -> InterpreterM Env
 --TODO REF
-assignFuncArgs [] [] = ask
-assignFuncArgs [] a = throwError "ERROR: number of args for function not correct" 
-assignFuncArgs a [] = throwError "ERROR: number of args for function not correct" 
-assignFuncArgs ((ValArg id t):args) (v:vs) = do
-    env <- saveVarInEnv t id
-    local (const env) $ setValToVar id v
-    local (const env) $ assignFuncArgs args vs
+assignFuncArgs fun_env [] [] = return fun_env
+assignFuncArgs fun_env [] exprs = throwError "ERROR: number of args for function not correct" 
+assignFuncArgs fun_env args [] = throwError "ERROR: number of args for function not correct" 
+assignFuncArgs fun_env ((ValArg id t):args) (expr:exprs) = do
+    run_env <- local (const fun_env) (saveVarInEnv t id)
+    val <- evalExpr expr
+    local (const run_env) (setValToVar id val)
+    assignFuncArgs run_env args exprs
+assignFuncArgs fun_env ((RefArg arg_id t):args) ((EVar ref_id):exprs) = do
+    run_env <- saveVarWithRef fun_env t arg_id ref_id
+    assignFuncArgs run_env args exprs
+assignFuncArgs fun_env args exprs = throwError "ERROR: Probably Reference argument does not receive variable" 
+
 
 exprToBool :: Expr -> InterpreterM Bool
 exprToBool expr = do
@@ -148,7 +154,7 @@ evalExpr (EMul expr1 mulOp expr2) = do
             if (val2 == 0) then throwError "ERROR: Can't divide by zero"
             else return (VInt (div val1 val2))
         Mod -> do
-            if (val2 == 0) then throwError "ERROR: Can't modulo by zero"
+            if (val2 == 0) then throwError "ERROR: Can't do modulo by zero"
             else return (VInt (mod val1 val2))
 evalExpr (EAdd expr1 addOp expr2) = do
     VInt val1 <- evalExpr expr1
@@ -166,22 +172,21 @@ evalExpr (EComp expr1 compOp expr2) = do
         GE -> return (VBool (val1 >= val2)) 
         EQU -> return (VBool (val1 == val2)) 
         NE -> return (VBool (val1 /= val2))
-evalExpr (ERunFun (Ident "print") in_args) = do
-    in_vals <- evalFuncExprs in_args
-    liftIO (putStrLn $ "PRINT: " ++ (show in_vals))
+evalExpr (ERunFun (Ident "print") exprs) = do
+    vals <- evalExprs exprs
+    liftIO (putStrLn $ "PRINT: " ++ (show vals))
     return (VInt 0)
-evalExpr (ERunFun id in_args)       = do
-    VFunc env t env_args block <- evalExpr (EVar id)
-    in_vals <- evalFuncExprs in_args
-    env' <- local (const env)  $ assignFuncArgs env_args in_vals
-    ret  <- local (const env') $ executeBlock block
+evalExpr (ERunFun id exprs)       = do
+    VFunc fun_env t args block <- evalExpr (EVar id)
+    run_env <- assignFuncArgs fun_env args exprs
+    ret  <- local (const run_env) $ executeBlock block
     case ret of
         Return val -> do
             retType <- getType val
             if t == retType then return val
             else throwError "ERROR: function returns mismatched type"                          
         RetEnv env -> throwError "No return statement"
-        any -> throwError "Use of continue/break out of function"
+        any -> throwError "Use of continue/break out of while"
 
 
 runInterpreter :: Program -> InterpreterM Integer

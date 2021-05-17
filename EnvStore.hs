@@ -39,6 +39,15 @@ saveVarInEnv t id = do
             setValToLoc loc (VBool True)
             return env
 
+saveVarWithRef :: Env -> Type -> Ident -> Ident -> InterpreterM Env
+saveVarWithRef fun_env new_t id ref_id = do
+    loc <- getLocFromVar ref_id
+    val <- getValFromLoc loc
+    last_t <- getType val
+    run_env <- local (const fun_env) (asks (M.insert id loc))
+    if last_t == new_t then return run_env
+    else throwError "ERROR: referation argument type does not match variable type"
+
 getLocFromVar :: Ident -> InterpreterM Loc
 getLocFromVar id = do
     loc <- asks (M.lookup id)

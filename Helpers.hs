@@ -149,6 +149,11 @@ evalCompOp (VInt val1) (VInt val2) compOp = do
         GE -> return (VBool (val1 >= val2)) 
         EQU -> return (VBool (val1 == val2)) 
         NE -> return (VBool (val1 /= val2))
+evalCompOp (VBool val1) (VBool val2) compOp = do
+    case compOp of
+        EQU -> return (VBool (val1 == val2)) 
+        NE -> return (VBool (val1 /= val2))
+        any -> throwError "ERROR: bool can be compared only through '==' and '!='"
 evalCompOp a b c = throwError "ERROR: compare operations only apply to Ints"
     
 evalOr :: Value -> Value -> InterpreterM Value
@@ -170,6 +175,15 @@ evalExpr (ELitFalse)                = return (VBool False)
 evalExpr (ELitMaybe)                = do
     bool <- liftIO (randomIO )
     return (VBool bool)
+evalExpr (ETup exprs) = do
+    vals <- evalExprs exprs
+    return (VTup vals)
+evalExpr (ETupTak expr int) = do
+    val <- evalExpr expr
+    case val of
+        VTup vals -> do
+            return (vals !! (fromIntegral int))
+        any -> throwError "'^' only apply to tuples"
 evalExpr (EVar id)             = getVarVal id
 evalExpr (EMinus expr) = do
     val <- evalExpr expr

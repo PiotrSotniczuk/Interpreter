@@ -66,11 +66,9 @@ ELitInt. 	Expr6 ::= Integer ;
 
 ELitStr.  	Expr6 ::= String ;
 
-ETup.		Expr6 ::= Tuple ;
+ETup.		Expr6 ::= "[" [Expr] "]" ;
 
 ETupTak.	Expr6 ::= Expr6 "^" Integer ;
-
-ETuple.		Tuple ::= "[" [Expr] "]" ;
 
 ELitTrue. 	Expr6 ::= "true" ;
 

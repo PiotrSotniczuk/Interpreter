@@ -171,7 +171,7 @@ instance Print AbsFlatte.Expr where
     AbsFlatte.EVar id_ -> prPrec i 6 (concatD [prt 0 id_])
     AbsFlatte.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
     AbsFlatte.ELitStr str -> prPrec i 6 (concatD [prt 0 str])
-    AbsFlatte.ETup tuple -> prPrec i 6 (concatD [prt 0 tuple])
+    AbsFlatte.ETup exprs -> prPrec i 6 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
     AbsFlatte.ETupTak expr n -> prPrec i 6 (concatD [prt 6 expr, doc (showString "^"), prt 0 n])
     AbsFlatte.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     AbsFlatte.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
@@ -187,10 +187,6 @@ instance Print AbsFlatte.Expr where
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
-
-instance Print AbsFlatte.Tuple where
-  prt i = \case
-    AbsFlatte.ETuple exprs -> prPrec i 0 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
 
 instance Print [AbsFlatte.Expr] where
   prt = prtList

@@ -19,6 +19,18 @@ import DataTypes
 getNewLoc :: Store -> Int
 getNewLoc s = M.size s + 1
 
+getTupInit :: [Type] -> InterpreterM [Value]
+getTupInit [] = return []
+getTupInit (t:ts) = (:) <$> initVal t <*> getTupInit ts
+
+initVal :: Type -> InterpreterM Value
+initVal Int = return (VInt 0)
+initVal Str = return (VString "")
+initVal Bool = return (VBool True)
+initVal (TypTuple types) = do
+    ts <- getTupInit types
+    return (VTup ts)
+
 setValToLoc :: Loc -> Value -> InterpreterM ()
 setValToLoc loc val = do
     new_store <- M.insert loc val <$> get
@@ -28,16 +40,9 @@ saveVarInEnv :: Type -> Ident -> InterpreterM Env
 saveVarInEnv t id = do
     loc <- getNewLoc <$> get
     env <- asks (M.insert id loc)
-    case t of
-        Int -> do 
-            setValToLoc loc (VInt 0)
-            return env
-        Str -> do
-            setValToLoc loc (VString "")
-            return env
-        Bool -> do
-            setValToLoc loc (VBool True)
-            return env
+    init <- initVal t
+    setValToLoc loc init
+    return env
 
 saveVarWithRef :: Env -> Type -> Ident -> Ident -> InterpreterM Env
 saveVarWithRef fun_env new_t id ref_id = do
@@ -78,8 +83,16 @@ setValToVar id val = do
     else 
         throwError "TYPE ERROR: value does not match declared type"
 
+getTupTypes :: [Value] -> InterpreterM [Type]
+getTupTypes [] = return []
+getTupTypes (x:xs) = (:) <$> getType x <*> getTupTypes xs
+
 getType :: Value -> InterpreterM Type
 getType (VBool a) = return Bool
 getType (VString a) = return Str
 getType (VInt a) = return Int
 getType (VFunc env t args block) = return t
+getType (VTup []) = throwError "ERROR: don't use empty tuples"
+getType (VTup vs) = do
+    types <- getTupTypes vs
+    return (TypTuple types)

@@ -62,7 +62,7 @@ transExpr x = case x of
   AbsFlatte.EVar ident -> failure x
   AbsFlatte.ELitInt integer -> failure x
   AbsFlatte.ELitStr string -> failure x
-  AbsFlatte.ETup tuple -> failure x
+  AbsFlatte.ETup exprs -> failure x
   AbsFlatte.ETupTak expr integer -> failure x
   AbsFlatte.ELitTrue -> failure x
   AbsFlatte.ELitFalse -> failure x
@@ -75,10 +75,6 @@ transExpr x = case x of
   AbsFlatte.EComp expr1 compop expr2 -> failure x
   AbsFlatte.EAnd expr1 expr2 -> failure x
   AbsFlatte.EOr expr1 expr2 -> failure x
-
-transTuple :: AbsFlatte.Tuple -> Result
-transTuple x = case x of
-  AbsFlatte.ETuple exprs -> failure x
 
 transAddOp :: AbsFlatte.AddOp -> Result
 transAddOp x = case x of

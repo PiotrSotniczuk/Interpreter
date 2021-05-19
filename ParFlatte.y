@@ -123,16 +123,13 @@ Expr6 :: { AbsFlatte.Expr }
 Expr6 : Ident { AbsFlatte.EVar $1 }
       | Integer { AbsFlatte.ELitInt $1 }
       | String { AbsFlatte.ELitStr $1 }
-      | Tuple { AbsFlatte.ETup $1 }
+      | '[' ListExpr ']' { AbsFlatte.ETup $2 }
       | Expr6 '^' Integer { AbsFlatte.ETupTak $1 $3 }
       | 'true' { AbsFlatte.ELitTrue }
       | 'false' { AbsFlatte.ELitFalse }
       | 'maybe' { AbsFlatte.ELitMaybe }
       | Ident '(' ListExpr ')' { AbsFlatte.ERunFun $1 $3 }
       | '(' Expr ')' { $2 }
-
-Tuple :: { AbsFlatte.Tuple }
-Tuple : '[' ListExpr ']' { AbsFlatte.ETuple $2 }
 
 Expr5 :: { AbsFlatte.Expr }
 Expr5 : '-' Expr6 { AbsFlatte.EMinus $2 }

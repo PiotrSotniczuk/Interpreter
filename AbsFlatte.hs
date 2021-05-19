@@ -47,7 +47,7 @@ data Expr
     = EVar Ident
     | ELitInt Integer
     | ELitStr String
-    | ETup Tuple
+    | ETup [Expr]
     | ETupTak Expr Integer
     | ELitTrue
     | ELitFalse
@@ -60,9 +60,6 @@ data Expr
     | EComp Expr CompOp Expr
     | EAnd Expr Expr
     | EOr Expr Expr
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data Tuple = ETuple [Expr]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data AddOp = Plus | Minus
